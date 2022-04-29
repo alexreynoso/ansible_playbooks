@@ -1,0 +1,24 @@
+---
+# THIS PLAYBOOK RUNS ALL THE COMMON PLAY IN THE DEPLOYMENT
+
+# instance settings debugging
+- name: check playbook settings
+  debug:
+    msg:
+      - "SERVER DISTRO       = {{ ansible_distribution }}"
+      - "SERVER RELEASE      = {{ ansible_distribution_release }}"
+      - "SERVER VERSION      = {{ ansible_distribution_version }}"
+      - "PYTHON VERSION      = {{ ansible_python_version }}"
+      - "ANSIBLE VERSION     = {{ ansible_version.full }}"
+      - "PYTHON EXECUTABLE   = {{ ansible_python.executable }}"
+- name: include setup ubuntu task
+  import_tasks: setup_ubuntu.yaml
+
+- name: include setup consul task
+  import_tasks: setup_consul.yaml
+
+- name: include setup_vault task
+  import_tasks: setup_vault.yaml
+
+- name: include setup_certificates task
+  import_tasks: setup_certificates.yaml

@@ -1,0 +1,16 @@
+- name: apt update and upgrade
+  apt:
+    upgrade: yes
+    update_cache: yes
+
+- name: setup apt tools
+  when: ansible_distribution == "Ubuntu"
+  apt:
+    pkg:
+      - curl
+      - gnupg
+      - gnupg1
+      - gnupg2
+      - software-properties-common
+  delay: 5
+  retries: 5

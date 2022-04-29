@@ -1,0 +1,9 @@
+---
+# vars file for vault1
+consul_user: "consul"
+consul_group: "{{ consul_user }}"
+vault_user: "vault"
+vault_group: "{{ vault_user }}"
+vault_certs_dir: "/opt/vault/tls"
+consul_dir: "/etc/consul.d"
+vault_dir: "/etc/vault"

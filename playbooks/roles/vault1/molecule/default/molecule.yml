@@ -1,0 +1,46 @@
+---
+# THE ARGUMENTS TO RUN MOLECULE TESTS
+
+lint: |
+  flake8
+  yamllint .
+  codespell --skip='*.pyc' .
+  ansible-lint --exclude ../common
+
+driver:
+  name: "docker"
+
+verifier:
+  name: "testinfra"
+
+platforms:
+  - name: "vault"
+    image: "ubuntu"
+    instance_raw_config_args:
+      - "vm.network 'forwarded_port', guest: 8200, host: 8200"
+    provider_raw_config_args:
+      - "customize ['modifyvm',:id,
+                      '--name', 'testenvironment',
+                      '--memory', '2048'
+                   ]"
+
+dependency:
+  name: "galaxy"
+
+provisioner:
+  name: "ansible"
+
+scenario:
+  name: "default"
+  test_sequence:
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

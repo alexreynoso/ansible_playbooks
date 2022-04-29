@@ -1,0 +1,60 @@
+---
+# Configuration for consul server
+- name: create consul group
+  group:
+    name: "{{ consul_group }}"
+    state: "present"
+
+- name: create consul user
+  user:
+    name: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    state: "present"
+    system: "yes"
+    comment: "{{ consul_user }} nologin user"
+    createhome: "no"
+
+- name: setup vault configuration directory
+  file:
+    path: "{{ consul_dir }}"
+    mode: "0644"
+    owner: "consul"
+    group: "consul"
+    state: "directory"
+
+- name: Add the HashiCorp GPG key
+  shell: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+
+- name: Add repository
+  shell: sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+
+- name: apt update
+  apt:
+    update_cache: yes
+
+- name: install consul
+  apt:
+    name: consul
+    state: present
+
+- name: create ui for consul
+  template:
+    src: "ui.j2"
+    mode: "0644"
+    dest: "{{ consul_dir }}/ui.json"
+    owner: "consul"
+    group: "consul"
+
+- name: configure systemd for consul
+  template:
+    src: "consul.service.j2"
+    mode: "0644"
+    dest: "/etc/systemd/system/consul.service"
+    owner: "root"
+    group: "root"
+
+- name: ensure consul service is started at boot
+  service:
+    name: "consul.service"
+    state: "started"
+    enabled: "yes"

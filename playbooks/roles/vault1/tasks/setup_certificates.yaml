@@ -1,0 +1,71 @@
+---
+- name: setup vault certificates directory
+  file:
+    path: "{{ vault_certs_dir }}"
+    owner: "root"
+    group: "root"
+    mode: '0755'
+    state: "directory"
+
+- name: setup vault ssl certificate
+  block:
+    - name: Create CA root key
+      shell: |
+        KEY="{{ vault_certs_dir }}/vault-ca.key"
+        openssl genrsa -out "$KEY" 4096
+
+    - name: Create and self sign the root certificate
+      shell: |
+        KEY="{{ vault_certs_dir }}/vault-ca.key"
+        CRT="{{ vault_certs_dir }}/vault-ca.crt"
+        ST="California"
+        O="Epicgames"
+        CN="localhost"
+        SUBJ="/C=US/ST=$ST/O=$O/CN=$CN"
+        openssl req -x509 -new -nodes -key "$KEY" \
+        -sha256 -days 1024 -subj "$SUBJ" -out "$CRT"
+
+    - name: Create certificate key for vault
+      shell: |
+        KEY="{{ vault_certs_dir }}/vault.key"
+        openssl genrsa -out "$KEY" 2048
+
+    - name: Create CSR for vault
+      shell: |
+        KEY="{{ vault_certs_dir }}/vault.key"
+        CSR="{{ vault_certs_dir }}/vault.csr"
+        ST="California"
+        O="Epicgames"
+        CN="127.0.0.1:8200"
+        SUBJ="/C=US/ST=$ST/O=$O/CN=$CN"
+        openssl req -new -sha256 -key "$KEY" -subj "$SUBJ" -out "$CSR"
+
+    - name: Generate vault certificate
+      shell: |
+        CRT="{{ vault_certs_dir }}/vault-ca.crt"
+        CSR="{{ vault_certs_dir }}/vault.csr"
+        KEY="{{ vault_certs_dir }}/vault-ca.key"
+        VAULT_CRT="{{ vault_certs_dir }}/vault.crt"
+        openssl x509 -req -in "$CSR" -CA "$CRT" -CAkey "$KEY" \
+        -CAcreateserial -out "$VAULT_CRT" -days 500 -sha256
+
+- name: change vault certificate ownership
+  file:
+    path: "{{vault_certs_dir}}/vault.crt"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: change ca certificate ownership
+  file:
+    path: "{{vault_certs_dir}}/vault-ca.crt"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: change private key ownership
+  file:
+    path: "{{vault_certs_dir}}/vault.key"
+    owner: root
+    group: vault
+    mode: 0640
