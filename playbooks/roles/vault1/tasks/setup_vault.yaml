@@ -27,10 +27,18 @@
     name: vault
     state: present
 
+- name: configure config.hcl file
+  template:
+    src: "config.hcl.j2"
+    mode: "0644"
+    dest: "{{ vault_dir }}/config.hcl"
+    owner: "vault"
+    group: "vault"
+
 - name: configure systemd for vault
   template:
     src: "vault.service.j2"
-    mode: "0755"
+    mode: "0644"
     dest: "/etc/systemd/system/vault.service"
     owner: "root"
     group: "root"
@@ -40,9 +48,9 @@
     name: "vault"
     state: "started"
     enabled: "yes"
-
-- name: Add env variable globally
-  lineinfile:
-    path: /etc/environment
-    line: VAULT_ADDR="https://localhost:8200"
-
+ 
+- name: set global variables
+  copy:
+    dest: "/etc/profile.d/vault_addr.sh"
+    content: |
+      export VAULT_ADDR="localhost:8200"

@@ -22,13 +22,8 @@
         O="Epicgames"
         CN="localhost"
         SUBJ="/C=US/ST=$ST/O=$O/CN=$CN"
-        openssl req -x509 -new -nodes -key "$KEY" \
-        -sha256 -days 1024 -subj "$SUBJ" -out "$CRT"
-
-    - name: Create certificate key for vault
-      shell: |
-        KEY="{{ vault_certs_dir }}/vault.key"
-        openssl genrsa -out "$KEY" 2048
+        openssl req -new -x509 -days 365 -key "$KEY" \ 
+        -subj "$SUBJ" -out "$CRT"
 
     - name: Create CSR for vault
       shell: |
@@ -36,36 +31,49 @@
         CSR="{{ vault_certs_dir }}/vault.csr"
         ST="California"
         O="Epicgames"
-        CN="127.0.0.1:8200"
+        CN="localhost"
         SUBJ="/C=US/ST=$ST/O=$O/CN=$CN"
         openssl req -new -sha256 -key "$KEY" -subj "$SUBJ" -out "$CSR"
 
     - name: Generate vault certificate
       shell: |
+        echo "subjectAltName=DNS:localhost" > SAN.txt
         CRT="{{ vault_certs_dir }}/vault-ca.crt"
         CSR="{{ vault_certs_dir }}/vault.csr"
         KEY="{{ vault_certs_dir }}/vault-ca.key"
         VAULT_CRT="{{ vault_certs_dir }}/vault.crt"
-        openssl x509 -req -in "$CSR" -CA "$CRT" -CAkey "$KEY" \
-        -CAcreateserial -out "$VAULT_CRT" -days 500 -sha256
+        openssl x509 -req -extfile SAN.txt -days 365 -in "$CSR" -CA "$CRT" \ 
+        -CAkey "$KEY" -CAcreateserial -out "$VAULT_CRT"
 
 - name: change vault certificate ownership
   file:
     path: "{{vault_certs_dir}}/vault.crt"
-    owner: root
-    group: root
-    mode: 0644
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
 
 - name: change ca certificate ownership
   file:
     path: "{{vault_certs_dir}}/vault-ca.crt"
-    owner: root
-    group: root
-    mode: 0644
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
 
 - name: change private key ownership
   file:
     path: "{{vault_certs_dir}}/vault.key"
-    owner: root
-    group: vault
-    mode: 0640
+    owner: 'root'
+    group: 'vault'
+    mode: '0640'
+
+- name: copy CA cert  to ca-certificate folder
+  copy:
+    src: "{{ vault_certs_dir }}/vault-ca.crt"
+    dest: "/usr/local/share/ca-certificates/"
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+
+- name: update CA certificates
+  shell: update-ca-certificates
+

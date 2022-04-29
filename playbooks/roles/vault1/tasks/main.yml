@@ -17,8 +17,8 @@
 - name: include setup consul task
   import_tasks: setup_consul.yaml
 
-- name: include setup_vault task
-  import_tasks: setup_vault.yaml
-
 - name: include setup_certificates task
   import_tasks: setup_certificates.yaml
+
+- name: include setup_vault task
+  import_tasks: setup_vault.yaml
